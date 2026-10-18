@@ -362,19 +362,12 @@ export default function Home() {
   return (
     <main>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Refund Desk ホーム"><span className="brand-mark">R</span><span>REFUND DESK</span></a>
+        <a className="brand" href="#top" aria-label="VISION 返金額算出シュミレーター ホーム"><span className="brand-mark">V</span><span>VISION 返金額算出シュミレーター</span></a>
         <a className="guide-link" href="#action-guide"><span>●</span> 対応ナビへ</a>
       </header>
 
       <section className="hero" id="top">
-        <div>
-          <div className="eyebrow">REFUND CALCULATION & ACTION GUIDE</div>
-          <h1>計算から、<br /><em>次に送る文面まで。</em></h1>
-          <p>返金額を出すだけで終わらない。契約情報を入力すると、打診の順番・送るタイミング・そのまま使える文面まで案内します。</p>
-        </div>
-        <div className="hero-steps" aria-label="対応の流れ">
-          <span>01 理由確認</span><b>→</b><span>02 段階提示</span><b>→</b><span>03 合意書</span><b>→</b><span>04 返金</span>
-        </div>
+        <h1>VISION<br /><em>返金額算出シュミレーター</em></h1>
       </section>
 
       <section className="workspace" aria-label="返金額計算フォーム">
@@ -424,7 +417,6 @@ export default function Home() {
         </div>
 
         <aside className="result-panel" aria-live="polite">
-          <div className="result-kicker">CALCULATION RESULT</div>
           <div className="result-title-row"><div><h2>3段階の提示額</h2><p>{form.customerName ? `${form.customerName} 様` : "お客様名 未入力"}</p></div><span className="plan-tag">{selectedPlan.name} / {form.contractMonths}ヶ月</span></div>
           {!selfReasonConfirmed && <div className="result-alert"><span>!</span><p><strong>まだ金額を提示しないでください</strong>まず自己都合による解約かを確認します。</p></div>}
 
@@ -453,14 +445,14 @@ export default function Home() {
 
       <section className="final-output" id="final-output">
         <div className="final-output-head">
-          <div><div className="eyebrow">FINAL OUTPUT</div><h2>このまま共有できる算出書</h2><p>入力内容と計算過程、支払先ごとの対応をひとつにまとめています。</p></div>
+          <div><h2>共有用算出書</h2><p>入力内容・計算過程・対応手順</p></div>
           <button type="button" onClick={copySummary}>{copied === "summary" ? "✓ コピーしました" : "全文をコピー"}</button>
         </div>
         <pre>{finalOutput}</pre>
       </section>
 
       <section className="action-guide" id="action-guide">
-        <div className="action-intro"><div className="eyebrow">ACTION PLAYBOOK</div><h2>いつ・何を送るか、<br />この順番で進める。</h2><p>左のステップを選ぶと、その場面で行うことと送信文が表示されます。対応が終わったら「次の対応へ」で進めてください。</p></div>
+        <div className="action-intro"><h2>対応手順</h2><p>ステップを選ぶと、行うことと送信文が表示されます。</p></div>
         <div className="playbook">
           <nav className="step-nav" aria-label="返金対応ステップ">
             {actions.map((action, index) => (
@@ -483,7 +475,7 @@ export default function Home() {
       </section>
 
       <section className="notes"><div className="note-icon">!</div><div><h2>最終確認</h2><p>本ツールは社内の返金交渉を補助する試算ツールです。最終的な返金額は契約書、支払状況、休会記録と照合してください。合意後は必ず合意書を締結し、締結確認後に返金を実行してください。</p></div></section>
-      <footer><span>REFUND DESK</span><p>Calculate. Communicate. Close with clarity.</p></footer>
+      <footer><span>VISION 返金額算出シュミレーター</span></footer>
     </main>
   );
 }
