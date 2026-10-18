@@ -156,6 +156,14 @@ button { cursor: pointer; }
 .next-action-preview small { margin-top: 3px; color: #9fb1a5; font-size: 8px; }
 .next-action-preview b { margin-top: 10px; color: #ffc0a1; font-size: 9px; }
 
+.final-output { width: min(980px, calc(100% - 48px)); margin: 90px auto 0; padding: 40px; border: 1px solid var(--line); border-radius: 24px; background: rgba(255,254,250,.94); box-shadow: var(--shadow); }
+.final-output-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; margin-bottom: 28px; }
+.final-output-head .eyebrow { margin-bottom: 11px; }
+.final-output-head h2 { margin: 0; font: 400 32px Georgia, "Yu Mincho", serif; }
+.final-output-head p { margin: 9px 0 0; color: var(--muted); font-size: 11px; }
+.final-output-head button { flex: 0 0 auto; padding: 12px 18px; border: 0; border-radius: 10px; background: var(--deep); color: #fff; font-size: 10px; font-weight: 800; }
+.final-output pre { max-height: 680px; margin: 0; padding: 28px 30px; border: 1px solid #e2e6df; border-radius: 15px; background: #f7f8f4; color: #354039; font: 12px/1.9 "Hiragino Sans", "Yu Gothic", sans-serif; white-space: pre-wrap; overflow: auto; }
+
 .action-guide { width: min(1240px, calc(100% - 48px)); margin: 110px auto 0; scroll-margin-top: 30px; }
 .action-intro { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 50px; margin-bottom: 36px; }
 .action-intro .eyebrow { grid-column: 1 / -1; margin-bottom: -30px; }
@@ -214,7 +222,7 @@ footer p { margin: 0; font-family: Georgia, serif; font-style: italic; letter-sp
 }
 
 @media (max-width: 720px) {
-  .topbar, .hero, .workspace, .action-guide, footer { width: min(100% - 28px, 1240px); }
+  .topbar, .hero, .workspace, .final-output, .action-guide, footer { width: min(100% - 28px, 1240px); }
   .topbar { padding-top: 18px; }
   .guide-link { font-size: 9px; }
   .hero { margin-top: 48px; margin-bottom: 43px; }
@@ -246,6 +254,11 @@ footer p { margin: 0; font-family: Georgia, serif; font-style: italic; letter-sp
   .message-box pre { font-size: 10px; }
   .offer-card { align-items: flex-end; }
   .amount { font-size: 24px; }
+  .final-output { margin-top: 60px; padding: 25px 18px; border-radius: 18px; }
+  .final-output-head { display: block; }
+  .final-output-head h2 { font-size: 27px; }
+  .final-output-head button { width: 100%; margin-top: 20px; }
+  .final-output pre { max-height: none; padding: 20px 16px; font-size: 10px; }
   .notes { width: calc(100% - 28px); padding: 19px; }
 }
 

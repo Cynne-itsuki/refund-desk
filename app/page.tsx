@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  ENTRANCE_FEE,
   PLAN_PRESETS,
   calculateRefund,
   contractEndDate,
@@ -11,6 +12,8 @@ import {
 
 type FormState = {
   customerName: string;
+  paymentProvider: string;
+  providerCancellationFee: number;
   planId: string;
   totalAmount: number;
   paidAmount: number;
@@ -36,18 +39,20 @@ type ActionStep = {
 };
 
 const defaultForm: FormState = {
-  customerName: "",
+  customerName: "山崎",
+  paymentProvider: "ライフティ",
+  providerCancellationFee: 74_880,
   planId: "royal",
   totalAmount: 1_200_000,
-  paidAmount: 1_200_000,
-  remainingAmount: 1_200_000,
+  paidAmount: 151_264,
+  remainingAmount: 1_048_736,
   contractMonths: 9,
-  startDate: "2026-01-01",
-  endDate: "2026-09-30",
-  cancellationDate: "2026-03-01",
-  pauseDays: 14,
-  consumedDays: 46,
-  elapsedMonths: 1.52,
+  startDate: "2026-01-20",
+  endDate: "2026-10-20",
+  cancellationDate: "2026-09-25",
+  pauseDays: 60,
+  consumedDays: 189,
+  elapsedMonths: 6,
 };
 
 function withDerivedPeriod(current: FormState, changes: Partial<FormState>): FormState {
@@ -131,6 +136,31 @@ function asRefundText(value: number) {
   return value < 0 ? `返金なし（不足額 ${formatYen(Math.abs(value))}）` : formatYen(value);
 }
 
+function formatDate(value: string, includeYear = true) {
+  if (!value) return "—";
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return includeYear ? `${year}/${month}/${day}` : `${month}/${day}`;
+}
+
+function extendGraduationDate(value: string, pauseDays: number) {
+  if (!value || pauseDays <= 0) return value;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  if (pauseDays % 30 === 0) {
+    date.setUTCMonth(date.getUTCMonth() + pauseDays / 30);
+  } else {
+    date.setUTCDate(date.getUTCDate() + pauseDays);
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+function withSan(value: string) {
+  const name = value.trim() || "お客様";
+  return /(?:さん|様)$/.test(name) ? name : `${name}さん`;
+}
+
 export default function Home() {
   const [form, setForm] = useState<FormState>(defaultForm);
   const [selfReasonConfirmed, setSelfReasonConfirmed] = useState(false);
@@ -141,17 +171,73 @@ export default function Home() {
   const selectedPlan = PLAN_PRESETS.find((plan) => plan.id === form.planId) ?? PLAN_PRESETS[2];
   const contractDays = countInclusiveDays(form.startDate, form.endDate);
   const calendarConsumedDays = countInclusiveDays(form.startDate, form.cancellationDate);
+  const appliedEntranceFee = Math.min(ENTRANCE_FEE, form.totalAmount);
 
   const result = useMemo(() => calculateRefund({
     totalAmount: form.totalAmount,
     paidAmount: form.paidAmount,
-    entranceFee: 0,
+    entranceFee: appliedEntranceFee,
     remainingAmount: form.remainingAmount,
     contractMonths: form.contractMonths,
     contractDays,
     consumedDays: form.consumedDays,
     elapsedMonths: form.elapsedMonths,
-  }), [form, contractDays]);
+  }), [form, contractDays, appliedEntranceFee]);
+
+  const serviceFee = Math.max(0, form.totalAmount - appliedEntranceFee);
+  const remainingMonths = Math.max(0, form.contractMonths - form.elapsedMonths);
+  const monthlyRate = form.contractMonths > 0 ? serviceFee / form.contractMonths : 0;
+  const consumedAmount = Math.floor(monthlyRate * form.elapsedMonths);
+  const unusedRefund = Math.floor(monthlyRate * remainingMonths);
+  const companyLumpSum = Math.floor(result.nonRefundableAmount + serviceFee - form.paidAmount);
+  const extendedGraduationDate = extendGraduationDate(form.endDate, form.pauseDays);
+  const pauseLabel = form.pauseDays > 0 && form.pauseDays % 30 === 0
+    ? `${form.pauseDays / 30}ヶ月休会`
+    : `${form.pauseDays}日休会`;
+
+  const finalOutput = [
+    `vision${withSan(form.customerName)}解約算出`,
+    "",
+    "【契約条件】",
+    `契約プラン:${selectedPlan.name}(契約月数:${form.contractMonths}ヶ月)`,
+    `契約金額: ${formatYen(form.totalAmount)}(サービス利用料${formatYen(serviceFee)}+入会金${formatYen(appliedEntranceFee)})`,
+    `契約日:${formatDate(form.startDate)}`,
+    `卒業予定日:${formatDate(extendedGraduationDate, false)}${form.pauseDays > 0 ? `(${pauseLabel}のため${formatDate(form.endDate, false)}から${formatDate(extendedGraduationDate, false)}に延長)` : ""}`,
+    `解約算出日:${formatDate(form.cancellationDate, false)}`,
+    `経過月数:${form.elapsedMonths}ヶ月`,
+    "",
+    `【${form.paymentProvider.trim() || "支払会社"}様】`,
+    `支払い済み総額:${formatYen(form.paidAmount)}`,
+    `解約手数料:${formatYen(form.providerCancellationFee)}`,
+    `※上記は、${form.paymentProvider.trim() || "支払会社"}様に別途お支払いいただく手数料です。`,
+    "",
+    "【返金額の算出】",
+    "返金不可能額　※契約書記載内容",
+    "=min(50,000円,契約残額×20%)+入会金",
+    `=${formatYen(Math.min(50_000, form.remainingAmount * 0.2))}+${formatYen(appliedEntranceFee)}${form.remainingAmount * 0.2 >= 50_000 ? "　※契約残額よりも50,000円の方が低い為" : ""}`,
+    `=${formatYen(result.nonRefundableAmount)}`,
+    "",
+    "消費額",
+    "=月次換算額×経過月数",
+    "=(サービス利用料÷契約月数)×経過月数",
+    `=(${formatYen(serviceFee)}÷${form.contractMonths}ヶ月)×${form.elapsedMonths}ヶ月`,
+    `=${formatYen(consumedAmount)}`,
+    "",
+    "返金額（未受講分）※現時点での算出になります",
+    "=月次換算額×残月数",
+    `=(${formatYen(serviceFee)}÷${form.contractMonths}ヶ月)×${remainingMonths}ヶ月`,
+    `=${formatYen(unusedRefund)}`,
+    "",
+    "一括支払額（弊社側へ）",
+    "=(返金不可能額+サービス利用料)−支払い済み総額",
+    `=(${formatYen(result.nonRefundableAmount)}+${formatYen(serviceFee)})−${formatYen(form.paidAmount)}`,
+    `=${formatYen(companyLumpSum)}`,
+    "",
+    "【ご対応流れ】",
+    `①解約手数料：${formatYen(form.providerCancellationFee)}を${form.paymentProvider.trim() || "支払会社"}様へ一括お支払い`,
+    `②未受講分：${formatYen(unusedRefund)}を${withSan(form.customerName)}へ返金`,
+    `③${formatYen(companyLumpSum)}を弊社へ一括お支払い`,
+  ].join("\n");
 
   const agreementAmount = acceptedOffer === 1
     ? result.offerOne
@@ -252,8 +338,7 @@ export default function Home() {
     setForm((current) => withDerivedPeriod(current, {
       planId: plan.id,
       totalAmount: plan.amount,
-      paidAmount: plan.amount,
-      remainingAmount: plan.amount,
+      remainingAmount: Math.max(0, plan.amount - current.paidAmount),
       contractMonths: plan.months,
       endDate: contractEndDate(current.startDate, plan.months),
     }));
@@ -272,14 +357,7 @@ export default function Home() {
     window.setTimeout(() => setCopied(null), 1800);
   };
 
-  const copySummary = () => copyText("summary", [
-    `【中途解約 返金額試算】${form.customerName || "（未入力）"} / ${selectedPlan.name}`,
-    `契約期間：${form.startDate}〜${form.endDate}`,
-    `休会 ${form.pauseDays}日・消化 ${form.consumedDays}日`,
-    `提示① 月次ベースの半額：${asRefundText(result.offerOne)}`,
-    `提示② 月次ベース：${asRefundText(result.monthlyRefund)}`,
-    `提示③ 日次ベース（最終）：${asRefundText(result.dailyRefund)}`,
-  ].join("\n"));
+  const copySummary = () => copyText("summary", finalOutput);
 
   return (
     <main>
@@ -320,6 +398,8 @@ export default function Home() {
             <NumberField label="契約金額" value={form.totalAmount} onChange={(v) => update("totalAmount", v)} hint="プランの参考額を自動入力。実際の契約金額に変更できます" />
             <NumberField label="支払済み総額" value={form.paidAmount} onChange={(v) => update("paidAmount", v)} hint="実際に受領済みの金額" />
             <NumberField label="契約残額" value={form.remainingAmount} onChange={(v) => update("remainingAmount", v)} hint="返金不可能額の20%計算に使用" />
+            <label className="field"><span className="field-label">支払会社名</span><span className="input-shell"><input type="text" value={form.paymentProvider} placeholder="例：ライフティ" onChange={(event) => update("paymentProvider", event.target.value)} /></span><small>「様」は算出書に自動で付きます</small></label>
+            <NumberField label="支払会社の解約手数料" value={form.providerCancellationFee} onChange={(v) => update("providerCancellationFee", v)} hint="支払会社へ別途支払う金額" />
           </div>
 
           <div className="section-divider" />
@@ -363,12 +443,20 @@ export default function Home() {
 
           <div className="summary-grid"><div><span>返金不可能額</span><strong>{formatYen(result.nonRefundableAmount)}</strong></div><div><span>違約金</span><strong>{formatYen(result.penalty)}</strong><small>100円未満切捨て</small></div></div>
           <details className="calculation-details"><summary>計算過程を確認</summary><dl><div><dt>サービス利用料</dt><dd>{formatYen(result.serviceFee)}</dd></div><div><dt>月次換算額</dt><dd>{formatYen(result.monthlyRate, true)} / 月</dd></div><div><dt>月次消費額</dt><dd>{formatYen(result.monthlyConsumed)}</dd></div><div><dt>1日あたり受講料</dt><dd>{formatYen(result.dailyRate, true)} / 日</dd></div></dl></details>
-          <button className="copy-button" type="button" onClick={copySummary}>{copied === "summary" ? "✓ コピーしました" : "試算結果をコピー"}</button>
+          <button className="copy-button" type="button" onClick={copySummary}>{copied === "summary" ? "✓ コピーしました" : "算出書をまとめてコピー"}</button>
 
           <a className="next-action-preview" href="#action-guide">
             <span>いまの対応</span><strong>{activeAction.short}｜{activeAction.title}</strong><small>{activeAction.timing}</small><b>文面を確認する ↓</b>
           </a>
         </aside>
+      </section>
+
+      <section className="final-output" id="final-output">
+        <div className="final-output-head">
+          <div><div className="eyebrow">FINAL OUTPUT</div><h2>このまま共有できる算出書</h2><p>入力内容と計算過程、支払先ごとの対応をひとつにまとめています。</p></div>
+          <button type="button" onClick={copySummary}>{copied === "summary" ? "✓ コピーしました" : "全文をコピー"}</button>
+        </div>
+        <pre>{finalOutput}</pre>
       </section>
 
       <section className="action-guide" id="action-guide">

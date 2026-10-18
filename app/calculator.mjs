@@ -1,5 +1,7 @@
 const safe = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
 
+export const ENTRANCE_FEE = 400_000;
+
 export const PLAN_PRESETS = [
   { id: "minimum", name: "ミニマム", months: 3, amount: 500_000 },
   { id: "advance", name: "アドバンス", months: 6, amount: 900_000 },
@@ -12,7 +14,6 @@ export function contractEndDate(start, months) {
   const date = new Date(`${start}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return "";
   date.setUTCMonth(date.getUTCMonth() + Number(months));
-  date.setUTCDate(date.getUTCDate() - 1);
   return date.toISOString().slice(0, 10);
 }
 
