@@ -1,5 +1,21 @@
 const safe = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
 
+export const PLAN_PRESETS = [
+  { id: "minimum", name: "ミニマム", months: 3, amount: 500_000 },
+  { id: "advance", name: "アドバンス", months: 6, amount: 900_000 },
+  { id: "royal", name: "ロイヤル", months: 9, amount: 1_200_000 },
+  { id: "perfect", name: "パーフェクト", months: 12, amount: 2_000_000 },
+];
+
+export function contractEndDate(start, months) {
+  if (!start || !months) return "";
+  const date = new Date(`${start}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  date.setUTCMonth(date.getUTCMonth() + Number(months));
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 export function countInclusiveDays(start, end) {
   if (!start || !end) return 0;
   const startDate = new Date(`${start}T00:00:00Z`);

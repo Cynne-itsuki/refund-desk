@@ -9,6 +9,16 @@ export type RefundInput = {
   elapsedMonths: number;
 };
 
+export type PlanPreset = {
+  id: string;
+  name: string;
+  months: number;
+  amount: number;
+};
+
+export const PLAN_PRESETS: PlanPreset[];
+export function contractEndDate(start: string, months: number): string;
+
 export type RefundResult = {
   nonRefundableAmount: number;
   serviceFee: number;

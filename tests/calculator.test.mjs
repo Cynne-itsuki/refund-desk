@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateRefund, countInclusiveDays } from "../app/calculator.mjs";
+import { PLAN_PRESETS, calculateRefund, contractEndDate, countInclusiveDays } from "../app/calculator.mjs";
+
+test("4つのプランに期間と金額が正しく設定されている", () => {
+  assert.deepEqual(
+    PLAN_PRESETS.map(({ name, months, amount }) => [name, months, amount]),
+    [
+      ["ミニマム", 3, 500_000],
+      ["アドバンス", 6, 900_000],
+      ["ロイヤル", 9, 1_200_000],
+      ["パーフェクト", 12, 2_000_000],
+    ],
+  );
+  assert.equal(contractEndDate("2026-01-01", 9), "2026-09-30");
+});
 
 test("日付は開始日と終了日を含めて数える", () => {
   assert.equal(countInclusiveDays("2026-01-01", "2026-06-30"), 181);
