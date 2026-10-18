@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { calculateRefund, countInclusiveDays } from "../app/calculator.mjs";
+
+test("日付は開始日と終了日を含めて数える", () => {
+  assert.equal(countInclusiveDays("2026-01-01", "2026-06-30"), 181);
+  assert.equal(countInclusiveDays("2026-01-01", "2026-01-01"), 1);
+});
+
+test("Notionの計算ルールに従って3段階の提示額を算出する", () => {
+  const result = calculateRefund({
+    totalAmount: 1_200_000,
+    paidAmount: 1_200_000,
+    entranceFee: 400_000,
+    remainingAmount: 800_000,
+    contractMonths: 6,
+    contractDays: 181,
+    consumedDays: 46,
+    elapsedMonths: 1.52,
+  });
+
+  assert.equal(result.nonRefundableAmount, 450_000);
+  assert.equal(result.monthlyConsumed, 202_667);
+  assert.equal(result.monthlyRefund, 547_333);
+  assert.equal(result.offerOne, 273_667);
+  assert.equal(result.penalty % 100, 0);
+  assert.equal(result.dailyRefund, 559_400);
+});
+
+test("返金額がマイナスでも不足額判定に使える値を返す", () => {
+  const result = calculateRefund({
+    totalAmount: 100_000,
+    paidAmount: 10_000,
+    entranceFee: 50_000,
+    remainingAmount: 100_000,
+    contractMonths: 1,
+    contractDays: 30,
+    consumedDays: 30,
+    elapsedMonths: 1,
+  });
+  assert.ok(result.monthlyRefund < 0);
+  assert.ok(result.dailyRefund < 0);
+});
