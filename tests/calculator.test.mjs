@@ -20,11 +20,10 @@ test("日付は開始日と終了日を含めて数える", () => {
   assert.equal(countInclusiveDays("2026-01-01", "2026-01-01"), 1);
 });
 
-test("Notionの計算ルールに従って3段階の提示額を算出する", () => {
+test("入会金なしで3段階の提示額を算出する", () => {
   const result = calculateRefund({
     totalAmount: 1_200_000,
     paidAmount: 1_200_000,
-    entranceFee: 400_000,
     remainingAmount: 800_000,
     contractMonths: 6,
     contractDays: 181,
@@ -32,19 +31,18 @@ test("Notionの計算ルールに従って3段階の提示額を算出する", (
     elapsedMonths: 1.52,
   });
 
-  assert.equal(result.nonRefundableAmount, 450_000);
-  assert.equal(result.monthlyConsumed, 202_667);
-  assert.equal(result.monthlyRefund, 547_333);
-  assert.equal(result.offerOne, 273_667);
+  assert.equal(result.nonRefundableAmount, 50_000);
+  assert.equal(result.monthlyConsumed, 304_000);
+  assert.equal(result.monthlyRefund, 846_000);
+  assert.equal(result.offerOne, 423_000);
   assert.equal(result.penalty % 100, 0);
-  assert.equal(result.dailyRefund, 559_400);
+  assert.equal(result.dailyRefund, 857_800);
 });
 
 test("返金額がマイナスでも不足額判定に使える値を返す", () => {
   const result = calculateRefund({
     totalAmount: 100_000,
     paidAmount: 10_000,
-    entranceFee: 50_000,
     remainingAmount: 100_000,
     contractMonths: 1,
     contractDays: 30,

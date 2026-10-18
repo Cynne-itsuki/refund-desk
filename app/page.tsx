@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   PLAN_PRESETS,
   calculateRefund,
@@ -14,7 +14,6 @@ type FormState = {
   planId: string;
   totalAmount: number;
   paidAmount: number;
-  entranceFee: number;
   remainingAmount: number;
   contractMonths: number;
   startDate: string;
@@ -41,8 +40,7 @@ const defaultForm: FormState = {
   planId: "royal",
   totalAmount: 1_200_000,
   paidAmount: 1_200_000,
-  entranceFee: 400_000,
-  remainingAmount: 800_000,
+  remainingAmount: 1_200_000,
   contractMonths: 9,
   startDate: "2026-01-01",
   endDate: "2026-09-30",
@@ -51,6 +49,22 @@ const defaultForm: FormState = {
   consumedDays: 46,
   elapsedMonths: 1.52,
 };
+
+function withDerivedPeriod(current: FormState, changes: Partial<FormState>): FormState {
+  const next = { ...current, ...changes };
+  const nextContractDays = countInclusiveDays(next.startDate, next.endDate);
+  const calendarDays = countInclusiveDays(next.startDate, next.cancellationDate);
+  const consumedDays = Math.max(0, calendarDays - next.pauseDays);
+  const elapsedMonths = nextContractDays > 0
+    ? (consumedDays / nextContractDays) * next.contractMonths
+    : 0;
+
+  return {
+    ...next,
+    consumedDays,
+    elapsedMonths: Number(elapsedMonths.toFixed(2)),
+  };
+}
 
 function NumberField({
   label,
@@ -128,20 +142,10 @@ export default function Home() {
   const contractDays = countInclusiveDays(form.startDate, form.endDate);
   const calendarConsumedDays = countInclusiveDays(form.startDate, form.cancellationDate);
 
-  useEffect(() => {
-    const nextConsumed = Math.max(0, calendarConsumedDays - form.pauseDays);
-    const nextElapsed = contractDays > 0 ? (nextConsumed / contractDays) * form.contractMonths : 0;
-    setForm((current) => ({
-      ...current,
-      consumedDays: nextConsumed,
-      elapsedMonths: Number(nextElapsed.toFixed(2)),
-    }));
-  }, [calendarConsumedDays, contractDays, form.pauseDays, form.contractMonths]);
-
   const result = useMemo(() => calculateRefund({
     totalAmount: form.totalAmount,
     paidAmount: form.paidAmount,
-    entranceFee: form.entranceFee,
+    entranceFee: 0,
     remainingAmount: form.remainingAmount,
     contractMonths: form.contractMonths,
     contractDays,
@@ -245,20 +249,18 @@ export default function Home() {
   };
 
   const applyPlan = (plan: (typeof PLAN_PRESETS)[number]) => {
-    setForm((current) => ({
-      ...current,
+    setForm((current) => withDerivedPeriod(current, {
       planId: plan.id,
       totalAmount: plan.amount,
       paidAmount: plan.amount,
-      remainingAmount: Math.max(0, plan.amount - current.entranceFee),
+      remainingAmount: plan.amount,
       contractMonths: plan.months,
       endDate: contractEndDate(current.startDate, plan.months),
     }));
   };
 
   const updateStartDate = (value: string) => {
-    setForm((current) => ({
-      ...current,
+    setForm((current) => withDerivedPeriod(current, {
       startDate: value,
       endDate: contractEndDate(value, current.contractMonths),
     }));
@@ -299,13 +301,13 @@ export default function Home() {
 
       <section className="workspace" aria-label="返金額計算フォーム">
         <div className="form-panel">
-          <div className="section-heading"><span className="section-number">01</span><div><h2>プランを選択</h2><p>期間と契約金額が自動で入ります</p></div></div>
+          <div className="section-heading"><span className="section-number">01</span><div><h2>プランを選択</h2><p>期間と参考金額を仮入力します。金額はあとから変更できます</p></div></div>
           <div className="plan-grid">
             {PLAN_PRESETS.map((plan) => (
               <button key={plan.id} type="button" className={`plan-card ${form.planId === plan.id ? "selected" : ""}`} onClick={() => applyPlan(plan)}>
                 <span className="plan-check">{form.planId === plan.id ? "✓" : ""}</span>
                 <strong>{plan.name}</strong>
-                <small>{plan.months}ヶ月</small>
+                <small>{plan.months}ヶ月・参考額</small>
                 <b>{formatYen(plan.amount)}</b>
               </button>
             ))}
@@ -315,9 +317,8 @@ export default function Home() {
           <div className="section-heading"><span className="section-number">02</span><div><h2>契約・支払情報</h2><p>契約書と支払記録に沿って入力してください</p></div></div>
           <div className="field-grid two-col">
             <label className="field"><span className="field-label">お客様名 <small>任意</small></span><span className="input-shell"><input type="text" value={form.customerName} placeholder="例：山田 太郎" onChange={(event) => update("customerName", event.target.value)} /></span></label>
-            <div className="field"><span className="field-label">契約金額</span><span className="readonly-value"><strong>{formatYen(form.totalAmount)}</strong><small>{selectedPlan.name}・{form.contractMonths}ヶ月</small></span></div>
+            <NumberField label="契約金額" value={form.totalAmount} onChange={(v) => update("totalAmount", v)} hint="プランの参考額を自動入力。実際の契約金額に変更できます" />
             <NumberField label="支払済み総額" value={form.paidAmount} onChange={(v) => update("paidAmount", v)} hint="実際に受領済みの金額" />
-            <NumberField label="入会金" value={form.entranceFee} onChange={(v) => update("entranceFee", v)} />
             <NumberField label="契約残額" value={form.remainingAmount} onChange={(v) => update("remainingAmount", v)} hint="返金不可能額の20%計算に使用" />
           </div>
 
@@ -326,10 +327,10 @@ export default function Home() {
           <div className="field-grid three-col dates">
             <DateField label="契約開始日" value={form.startDate} onChange={updateStartDate} />
             <DateField label="契約終了日（自動）" value={form.endDate} readOnly />
-            <DateField label="解約申請日" value={form.cancellationDate} onChange={(v) => update("cancellationDate", v)} />
+            <DateField label="解約申請日" value={form.cancellationDate} onChange={(v) => setForm((current) => withDerivedPeriod(current, { cancellationDate: v }))} />
           </div>
           <div className="field-grid three-col compact-grid">
-            <NumberField label="休会日数" value={form.pauseDays} onChange={(v) => update("pauseDays", v)} suffix="日" />
+            <NumberField label="休会日数" value={form.pauseDays} onChange={(v) => setForm((current) => withDerivedPeriod(current, { pauseDays: v }))} suffix="日" />
             <NumberField label="実消化日数" value={form.consumedDays} onChange={(v) => update("consumedDays", v)} suffix="日" hint="開始日〜申請日 − 休会日数" />
             <NumberField label="月次消化月数" value={form.elapsedMonths} onChange={(v) => update("elapsedMonths", v)} suffix="ヶ月" step={0.01} hint="按分値。必要に応じて編集可" />
           </div>

@@ -102,9 +102,6 @@ button { cursor: pointer; }
 .suffix { flex: 0 0 auto; padding-right: 13px; color: #8a918a; font-size: 10px; }
 .field > small { margin-top: 6px; color: #90968f; font-size: 9px; line-height: 1.4; }
 .date-shell input { padding-right: 8px; font-size: 11px; }
-.readonly-value { display: flex; align-items: center; justify-content: space-between; min-height: 47px; padding: 0 13px; border: 1px solid var(--line); border-radius: 11px; background: #f0f2ed; }
-.readonly-value strong { color: var(--green); font: 400 16px Georgia, serif; }
-.readonly-value small { color: var(--muted); font-size: 9px; }
 .compact-grid { margin-top: 21px; }
 .period-strip { display: flex; justify-content: space-between; gap: 10px; margin-top: 22px; padding: 15px 17px; border-radius: 11px; background: #eff1eb; color: var(--muted); font-size: 9px; }
 .period-strip span { display: flex; flex-direction: column; gap: 3px; }
