@@ -2,6 +2,8 @@
 
 オンラインスクールの中途解約に伴う返金額を、契約情報・期間・休会日数から自動計算するWebアプリです。
 
+**公開版:** https://refund-desk.copperpony10.chatgpt.site
+
 ## 主な機能
 
 - 休会日数を除いた実消化日数の自動計算
@@ -28,9 +30,9 @@
 Node.js 22.13以上が必要です。
 
 ```bash
-npm install
-npm run dev
-npm run build
+pnpm install
+pnpm dev
+pnpm build
 ```
 
 ## ライセンス
