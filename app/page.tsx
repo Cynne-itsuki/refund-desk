@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   ENTRANCE_FEE,
   PLAN_PRESETS,
+  calculateElapsedMonths,
   calculateRefund,
   contractEndDate,
   countInclusiveDays,
@@ -52,7 +53,7 @@ const defaultForm: FormState = {
   cancellationDate: "2026-09-25",
   pauseDays: 60,
   consumedDays: 189,
-  elapsedMonths: 6,
+  elapsedMonths: 7,
 };
 
 function withDerivedPeriod(current: FormState, changes: Partial<FormState>): FormState {
@@ -60,14 +61,12 @@ function withDerivedPeriod(current: FormState, changes: Partial<FormState>): For
   const nextContractDays = countInclusiveDays(next.startDate, next.endDate);
   const calendarDays = countInclusiveDays(next.startDate, next.cancellationDate);
   const consumedDays = Math.max(0, calendarDays - next.pauseDays);
-  const elapsedMonths = nextContractDays > 0
-    ? (consumedDays / nextContractDays) * next.contractMonths
-    : 0;
+  const elapsedMonths = calculateElapsedMonths(consumedDays, nextContractDays, next.contractMonths);
 
   return {
     ...next,
     consumedDays,
-    elapsedMonths: Number(elapsedMonths.toFixed(2)),
+    elapsedMonths,
   };
 }
 
@@ -405,7 +404,7 @@ export default function Home() {
           <div className="field-grid three-col compact-grid">
             <NumberField label="休会日数" value={form.pauseDays} onChange={(v) => setForm((current) => withDerivedPeriod(current, { pauseDays: v }))} suffix="日" />
             <NumberField label="実消化日数" value={form.consumedDays} onChange={(v) => update("consumedDays", v)} suffix="日" hint="開始日〜申請日 − 休会日数" />
-            <NumberField label="月次消化月数" value={form.elapsedMonths} onChange={(v) => update("elapsedMonths", v)} suffix="ヶ月" step={0.01} hint="按分値。必要に応じて編集可" />
+            <NumberField label="月次消化月数" value={form.elapsedMonths} onChange={(v) => update("elapsedMonths", Math.ceil(v))} suffix="ヶ月" hint="端数は1ヶ月として切り上げ" />
           </div>
           <div className="period-strip"><span>契約日数 <strong>{contractDays || "—"}日</strong></span><span>暦上の経過 <strong>{calendarConsumedDays || "—"}日</strong></span><span>休会控除後 <strong>{form.consumedDays}日</strong></span></div>
 

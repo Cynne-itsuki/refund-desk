@@ -25,6 +25,14 @@ export function countInclusiveDays(start, end) {
   return Math.floor((endDate.getTime() - startDate.getTime()) / 86_400_000) + 1;
 }
 
+export function calculateElapsedMonths(consumedDays, contractDays, contractMonths) {
+  const days = Math.max(0, safe(consumedDays));
+  const totalDays = Math.max(0, safe(contractDays));
+  const months = Math.max(0, safe(contractMonths));
+  if (totalDays === 0 || months === 0) return 0;
+  return Math.min(months, Math.ceil((days / totalDays) * months));
+}
+
 export function calculateRefund(input) {
   const totalAmount = Math.max(0, safe(input.totalAmount));
   const paidAmount = Math.max(0, safe(input.paidAmount));
@@ -33,7 +41,7 @@ export function calculateRefund(input) {
   const contractMonths = Math.max(0, safe(input.contractMonths));
   const contractDays = Math.max(0, safe(input.contractDays));
   const consumedDays = Math.min(contractDays || Infinity, Math.max(0, safe(input.consumedDays)));
-  const elapsedMonths = Math.min(contractMonths || Infinity, Math.max(0, safe(input.elapsedMonths)));
+  const elapsedMonths = Math.min(contractMonths || Infinity, Math.ceil(Math.max(0, safe(input.elapsedMonths))));
 
   const nonRefundableAmount = Math.round(Math.min(50_000, remainingAmount * 0.2) + entranceFee);
   const serviceFee = Math.max(0, totalAmount - entranceFee);
