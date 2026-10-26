@@ -1,4 +1,4 @@
-# VISION 返金額算出シュミレーター
+# VISION 返金額算出シミュレーター
 
 オンラインスクールの中途解約に伴う返金額を、契約情報・期間・休会日数から自動計算するWebアプリです。
 
@@ -46,3 +46,14 @@ pnpm build
 ## ライセンス
 
 MIT
+
+## ソースの入口
+
+| 場所 | 内容 |
+|---|---|
+| [app/page.tsx](app/page.tsx) | 画面・入力フロー |
+| [app/calculator.mjs](app/calculator.mjs) | 返金額の計算処理 |
+| [tests/](tests/) | 計算処理などの検証 |
+| [worker/](worker/) | 公開環境の処理 |
+
+計算処理を変更した場合は `pnpm test` で確認します。
